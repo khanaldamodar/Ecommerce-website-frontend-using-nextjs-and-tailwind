@@ -13,6 +13,7 @@
     "inStock": true,
     "discount": 17
   },
+  
   {
     "id": 2,
     "name": "Emerald Stone Ring",
@@ -108,6 +109,20 @@
     "reviews": 92,
     "description": "Professional palm reading and future prediction",
     "features": ["Expert Analysis", "Future Insights", "Career Guidance"],
+    "inStock": true,
+    "discount": 17
+  },
+  {
+    "id": 9,
+    "name": "Natural Ruby Gemstone",
+    "category": "gems",
+    "price": 2500,
+    "originalPrice": 3000,
+    "image": "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=300&fit=crop",
+    "rating": 4.8,
+    "reviews": 24,
+    "description": "Premium quality natural ruby gemstone for Mars planet",
+    "features": ["Certified", "Natural", "Energized"],
     "inStock": true,
     "discount": 17
   }

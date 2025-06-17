@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import React from 'react'
 
 const Footer = () => {
@@ -10,8 +11,8 @@ const Footer = () => {
                 <p className="text-sm">© 2023 Jyotish Shop. All rights reserved.</p>
                 </div>
                 <div className="flex space-x-4">
-                <a href="#" className="text-sm hover:underline">Privacy Policy</a>
-                <a href="#" className="text-sm hover:underline">Terms of Service</a>
+                <a href="/privacy" className="text-sm hover:underline">Privacy Policy</a>
+                <Link href="/terms-and-services" className="text-sm hover:underline">Terms of Service</Link>
                 </div>
             </div>
             </div>
