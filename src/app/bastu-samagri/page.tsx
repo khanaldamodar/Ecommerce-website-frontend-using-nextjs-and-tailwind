@@ -1,17 +1,46 @@
 "use client"
 import React, { useState } from 'react'
 import products from '@/components/global/data.json'
-const ProductComponent = () => {
-    const [selectedCategory, setSelectedCategory] = useState('bastu')
-    const [wishlist, setWishlist] = useState([])
-    const [cart, setCart] = useState([])
+
+// Define the Product interface
+interface Product {
+  id: number
+  name: string
+  description: string
+  image: string
+  price: number
+  originalPrice: number
+  discount: number
+  category: string
+  inStock: boolean
+  features: string[]
+  rating: number
+  reviews: number
+}
+
+// Define category type
+type Category = 'all' | 'bastu' | string
+
+// Props interface for ProductCard
+interface ProductCardProps {
+  product: Product
+}
+
+const ProductComponent: React.FC = () => {
+    const [selectedCategory, setSelectedCategory] = useState<Category>('bastu')
+    const [wishlist, setWishlist] = useState<number[]>([])
+    const [cart, setCart] = useState<number[]>([]) // Fixed: was <number>([])
+    
+    // Type assertion for imported products data
+    const typedProducts = products as Product[]
+    
     // Filter products based on selected category
-    const filteredProducts = selectedCategory === 'all' 
-        ? products 
-        : products.filter(product => product.category === selectedCategory)
+    const filteredProducts: Product[] = selectedCategory === 'all' 
+        ? typedProducts 
+        : typedProducts.filter(product => product.category === selectedCategory)
 
     // Wishlist functions
-    const toggleWishlist = (productId) => {
+    const toggleWishlist = (productId: number): void => {
         setWishlist(prev => 
             prev.includes(productId) 
                 ? prev.filter(id => id !== productId)
@@ -20,12 +49,13 @@ const ProductComponent = () => {
     }
 
     // Cart functions
-    const addToCart = (productId) => {
+    const addToCart = (productId: number): void => {
         setCart(prev => [...prev, productId])
         // You can add a toast notification here
     }
+    
     // Product Card Component
-    const ProductCard = ({ product }) => (
+    const ProductCard: React.FC<ProductCardProps> = ({ product }) => (
         <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden group">
             {/* Image Container */}
             <div className="relative overflow-hidden">
@@ -53,6 +83,7 @@ const ProductComponent = () => {
                 <button
                     onClick={() => toggleWishlist(product.id)}
                     className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors duration-200"
+                    aria-label={wishlist.includes(product.id) ? "Remove from wishlist" : "Add to wishlist"}
                 >
                     <svg 
                         className={`w-5 h-5 ${wishlist.includes(product.id) ? 'text-red-500 fill-current' : 'text-gray-400'}`}
@@ -72,7 +103,7 @@ const ProductComponent = () => {
                 
                 {/* Features */}
                 <div className="flex flex-wrap gap-1 mb-3">
-                    {product.features.slice(0, 2).map((feature, index) => (
+                    {product.features.slice(0, 2).map((feature: string, index: number) => (
                         <span key={index} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
                             {feature}
                         </span>
@@ -82,7 +113,7 @@ const ProductComponent = () => {
                 {/* Rating */}
                 <div className="flex items-center mb-3">
                     <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
+                        {[...Array(5)].map((_, i: number) => (
                             <svg
                                 key={i}
                                 className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
@@ -126,7 +157,7 @@ const ProductComponent = () => {
         <div className="max-w-7xl mx-auto px-4 py-8">
             {/* Products Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredProducts.map(product => (
+                {filteredProducts.map((product: Product) => (
                     <ProductCard key={product.id} product={product} />
                 ))}
             </div>

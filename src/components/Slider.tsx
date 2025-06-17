@@ -1,8 +1,42 @@
 "use client"
 import React, { useState, useEffect } from 'react'
-const TripleSliders = () => {
+
+// Define the Item interface for slider items
+interface SliderItem {
+    id: number
+    title: string
+    image: string
+    description: string
+}
+
+// Define category keys type
+type CategoryKey = 'gems' | 'bastuSaman' | 'services'
+
+// Define the structure for categories data
+interface CategoriesData {
+    gems: SliderItem[]
+    bastuSaman: SliderItem[]
+    services: SliderItem[]
+}
+
+// Define current slides state type
+interface CurrentSlides {
+    gems: number
+    bastuSaman: number
+    services: number
+}
+
+// Props interface for Slider component
+interface SliderProps {
+    category: CategoryKey
+    title: string
+    data: SliderItem[]
+    currentIndex: number
+}
+
+const TripleSliders: React.FC = () => {
     // Sample data for different categories
-    const categoriesData = {
+    const categoriesData: CategoriesData = {
         gems: [
             {
                 id: 1,
@@ -84,7 +118,7 @@ const TripleSliders = () => {
     }
 
     // State for current slide index for each category
-    const [currentSlides, setCurrentSlides] = useState({
+    const [currentSlides, setCurrentSlides] = useState<CurrentSlides>({
         gems: 0,
         bastuSaman: 0,
         services: 0
@@ -92,7 +126,7 @@ const TripleSliders = () => {
 
     // Auto-slide functionality
     useEffect(() => {
-        const interval = setInterval(() => {
+        const interval: NodeJS.Timeout = setInterval(() => {
             setCurrentSlides(prev => ({
                 gems: (prev.gems + 1) % categoriesData.gems.length,
                 bastuSaman: (prev.bastuSaman + 1) % categoriesData.bastuSaman.length,
@@ -101,30 +135,32 @@ const TripleSliders = () => {
         }, 3000) // Change slide every 3 seconds
 
         return () => clearInterval(interval)
-    }, [])
+    }, [categoriesData.gems.length, categoriesData.bastuSaman.length, categoriesData.services.length])
 
     // Navigation functions
-    const nextSlide = (category) => {
+    const nextSlide = (category: CategoryKey): void => {
         setCurrentSlides(prev => ({
             ...prev,
             [category]: (prev[category] + 1) % categoriesData[category].length
         }))
     }
-    const prevSlide = (category) => {
+
+    const prevSlide = (category: CategoryKey): void => {
         setCurrentSlides(prev => ({
             ...prev,
             [category]: prev[category] === 0 ? categoriesData[category].length - 1 : prev[category] - 1
         }))
     }
 
-    const goToSlide = (category, index) => {
+    const goToSlide = (category: CategoryKey, index: number): void => {
         setCurrentSlides(prev => ({
             ...prev,
             [category]: index
         }))
     }
+
     // Slider component
-    const Slider = ({ category, title, data, currentIndex }) => (
+    const Slider: React.FC<SliderProps> = ({ category, title, data, currentIndex }) => (
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             <div className="relative h-64 overflow-hidden">
                 {/* Main Image */}
@@ -132,14 +168,15 @@ const TripleSliders = () => {
                     <img
                         src={data[currentIndex].image}
                         alt={data[currentIndex].title}
-                        className="w-full h-full object-cover transition-all duration-500"/>
+                        className="w-full h-full object-cover transition-all duration-500"
+                    />
                 </div>
             </div>
             {/* Content */}
             <div className="p-4">
                 {/* Dots Navigation */}
                 <div className="flex justify-center space-x-2">
-                    {data.map((_, index) => (
+                    {data.map((_, index: number) => (
                         <button
                             key={index}
                             onClick={() => goToSlide(category, index)}
@@ -148,6 +185,7 @@ const TripleSliders = () => {
                                     ? 'bg-brand' 
                                     : 'bg-gray-300 hover:bg-gray-400'
                             }`}
+                            aria-label={`Go to slide ${index + 1}`}
                         />
                     ))}
                 </div>
@@ -157,7 +195,7 @@ const TripleSliders = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
-            <h1 className='text-brand font-bold text-2xl py-6'>Special Occcations</h1>
+            <h1 className='text-brand font-bold text-2xl py-6'>Special Occasions</h1>
     
             {/* Three Sliders in a Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -174,6 +212,7 @@ const TripleSliders = () => {
                     data={categoriesData.bastuSaman}
                     currentIndex={currentSlides.bastuSaman}
                 />
+                
                 <Slider
                     category="services"
                     title="Jyotish Services"
