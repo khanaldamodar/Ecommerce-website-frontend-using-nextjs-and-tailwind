@@ -1,5 +1,6 @@
 import React from 'react'
 import { Metadata } from 'next'
+import '../../app/globals.css'
 
 // Define props interface for the layout
 interface AdminLayoutProps {
@@ -12,7 +13,6 @@ export const metadata: Metadata = {
   description: 'Admin panel for managing the application',
   robots: 'noindex, nofollow', // Prevent search engines from indexing admin pages
 }
-
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   return (
     <html lang="en">

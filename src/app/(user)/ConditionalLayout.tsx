@@ -3,7 +3,7 @@ import React from 'react'
 import { usePathname } from 'next/navigation'
 import Navbar from '@/components/global/Navbar'
 import Footer from '@/components/global/Footer'
-import '../app/globals.css'
+import '../../app/globals.css'
 
 
 // Define props interface

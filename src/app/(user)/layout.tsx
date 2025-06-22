@@ -1,7 +1,7 @@
 import React from 'react'
 import { Metadata } from 'next'
 import ConditionalLayout from './ConditionalLayout'
-import '../app/globals.css'
+import '../../app/globals.css'
 
 
 // Define props interface for the layout
