@@ -7,6 +7,7 @@ const config: Config = {
         sans: ['var(--font-poppins)'], // sets as default `font-sans`
         poppins: ['var(--font-poppins)'], // allows you to use `font-poppins` too
       },
+      
     },
   },
   content: [

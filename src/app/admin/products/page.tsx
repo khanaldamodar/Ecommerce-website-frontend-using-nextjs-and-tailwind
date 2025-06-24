@@ -1,371 +1,258 @@
 "use client"
+import React, { useState, useEffect } from 'react';
+import { Loader2, AlertCircle, Package, Star } from 'lucide-react';
 
-import type React from "react"
 
-import { useState } from "react"
-import { ArrowLeft, Upload, X, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
+interface ProductType{
+  name: string;
+  description: string;
+  short_description?: string;
+  price: string;
+  compare_price?: string;
+  stock: number;
+  low_stock: number;
+  image_url?: string;
+  is_active: boolean;
+  is_featured: boolean;
+  brand?: string;
+  vendor?: string;
+  product_type?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  category?: number | null;
+  id: number;
+  updated_by?: string | null;
+  weight?: string | null;
+  
+}
 
-export default function AddProductPage() {
-  const [images, setImages] = useState<string[]>([])
-  const [tags, setTags] = useState<string[]>([])
-  const [newTag, setNewTag] = useState("")
-  const [isActive, setIsActive] = useState(true)
-  const [isFeatured, setIsFeatured] = useState(false)
+const ProductsTable = () => {
+  const [products, setProducts] = useState<ProductType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files) {
-      const newImages = Array.from(files).map((file) => URL.createObjectURL(file))
-      setImages((prev) => [...prev, ...newImages])
-    }
+  // Replace with your actual API endpoint
+  const API_ENDPOINT = 'YOUR_API_ENDPOINT_HERE';
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        // Uncomment and modify this when you have your API endpoint
+        const response = await fetch("http://localhost:8000/api/products", {
+          headers: {
+            'Content-Type': 'application/json',
+         
+          },
+          cache: 'no-cache', 
+    });
+        const data = await response.json();
+        console.log(data)
+        setProducts(data);
+        setLoading(false);
+        
+
+        
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch products. Please check your API endpoint.');
+        console.error('Error fetching products:', err);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const formatPrice = (price) => {
+    return `$${parseFloat(price).toFixed(2)}`;
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const getStockStatus = (stock, lowStock) => {
+    if (stock === 0) return { text: 'Out of Stock', className: 'bg-red-100 text-red-800' };
+    if (stock <= lowStock) return { text: 'Low Stock', className: 'bg-yellow-100 text-yellow-800' };
+    return { text: 'In Stock', className: 'bg-green-100 text-green-800' };
+  };
+
+  const Badge = ({ children, className }) => (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${className}`}>
+      {children}
+    </span>
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8 bg-gray-50 min-h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <span className="ml-2 text-gray-600">Loading products...</span>
+      </div>
+    );
   }
 
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  const addTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags((prev) => [...prev, newTag.trim()])
-      setNewTag("")
-    }
-  }
-
-  const removeTag = (tagToRemove: string) => {
-    setTags((prev) => prev.filter((tag) => tag !== tagToRemove))
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Handle form submission here
-    console.log("Product submitted")
+  if (error) {
+    return (
+      <div className="m-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="flex items-center">
+          <AlertCircle className="h-5 w-5 text-red-600" />
+          <span className="ml-2 text-red-800">{error}</span>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Add New Product</h1>
-            <p className="text-muted-foreground">Create a new product for your store</p>
+    <div className="container mx-auto p-6 bg-gray-50 min-h-screen">
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+            <Package className="h-6 w-6 mr-2 text-blue-600" />
+            Products Inventory
+          </h1>
+          <p className="text-gray-600 mt-1">Manage your product catalog</p>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Product
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Description
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Price
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Stock
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Brand
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Created By
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Created
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Featured
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {products.map((product) => {
+                const stockStatus = getStockStatus(product.stock, product.low_stock);
+                return (
+                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          {product.image_url ? (
+                            <img 
+                              className="h-10 w-10 rounded-lg object-cover" 
+                              src={product.image_url} 
+                              alt={product.name}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextElementSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
+                              <Package className="h-5 w-5 text-gray-400" />
+                            </div>
+                          )}
+                          <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center" style={{display: 'none'}}>
+                            <Package className="h-5 w-5 text-gray-400" />
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                          <div className="text-sm text-gray-500">ID: #{product.id}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900 max-w-xs truncate" title={product.description}>
+                        {product.description}
+                      </div>
+                      {product.short_description && (
+                        <div className="text-sm text-gray-500 max-w-xs truncate" title={product.short_description}>
+                          {product.short_description}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="text-sm font-semibold text-gray-900">
+                        {formatPrice(product.price)}
+                      </div>
+                      {product.compare_price && (
+                        <div className="text-sm text-gray-500 line-through">
+                          {formatPrice(product.compare_price)}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="text-sm font-medium text-gray-900">{product.stock}</div>
+                      {product.low_stock > 0 && (
+                        <div className="text-xs text-gray-500">Low: {product.low_stock}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <Badge className={stockStatus.className}>
+                        {stockStatus.text}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{product.brand || '-'}</div>
+                      {product.vendor && (
+                        <div className="text-sm text-gray-500">{product.vendor}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {product.created_by || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatDate(product.created_at)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      {product.is_featured ? (
+                        <Star className="h-5 w-5 text-yellow-500 mx-auto" fill="currentColor" />
+                      ) : (
+                        <span className="text-gray-300">-</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        
+        {products.length === 0 && (
+          <div className="text-center py-12">
+            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <div className="text-gray-500">No products found.</div>
+          </div>
+        )}
+        
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div className="text-sm text-gray-600">
+            Showing {products.length} products total
           </div>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Basic Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Basic Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Product Name *</Label>
-                    <Input id="name" placeholder="Enter product name" required />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description *</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Enter product description"
-                      className="min-h-[120px]"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="short-description">Short Description</Label>
-                    <Textarea
-                      id="short-description"
-                      placeholder="Brief product summary (optional)"
-                      className="min-h-[80px]"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Product Images */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Product Images</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                      <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                      <div className="space-y-2">
-                        <Label htmlFor="images" className="cursor-pointer">
-                          <span className="text-sm text-center font-medium text-blue-600 hover:text-blue-500">
-                            Click to upload images
-                          </span>
-                          <Input
-                            id="images"
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleImageUpload}
-                          />
-                        </Label>
-                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB each</p>
-                      </div>
-                    </div>
-
-                    {images.length > 0 && (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {images.map((image, index) => (
-                          <div key={index} className="relative group">
-                            <img
-                              src={image || "/placeholder.svg"}
-                              alt={`Product ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg border"
-                            />
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon"
-                              className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => removeImage(index)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                            {index === 0 && <Badge className="absolute bottom-1 left-1 text-xs">Main</Badge>}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Pricing & Inventory */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pricing & Inventory</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="price">Price *</Label>
-                      <Input id="price" type="number" step="0.01" placeholder="0.00" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="compare-price">Compare at Price</Label>
-                      <Input id="compare-price" type="number" step="0.01" placeholder="0.00" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="sku">SKU</Label>
-                      <Input id="sku" placeholder="Product SKU" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="barcode">Barcode</Label>
-                      <Input id="barcode" placeholder="Product barcode" />
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="quantity">Quantity *</Label>
-                      <Input id="quantity" type="number" placeholder="0" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="low-stock">Low Stock Alert</Label>
-                      <Input id="low-stock" type="number" placeholder="5" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="weight">Weight (kg)</Label>
-                      <Input id="weight" type="number" step="0.01" placeholder="0.00" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* SEO Settings */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>SEO Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="meta-title">Meta Title</Label>
-                    <Input id="meta-title" placeholder="SEO title for search engines" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="meta-description">Meta Description</Label>
-                    <Textarea
-                      id="meta-description"
-                      placeholder="SEO description for search engines"
-                      className="min-h-[80px]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="url-handle">URL Handle</Label>
-                    <Input id="url-handle" placeholder="product-url-handle" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Product Status */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Product Status</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="active">Active</Label>
-                    <Switch id="active" checked={isActive} onCheckedChange={setIsActive} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="featured">Featured Product</Label>
-                    <Switch id="featured" checked={isFeatured} onCheckedChange={setIsFeatured} />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Product Organization */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Product Organization</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="electronics">Electronics</SelectItem>
-                        <SelectItem value="clothing">Clothing</SelectItem>
-                        <SelectItem value="home">Home & Garden</SelectItem>
-                        <SelectItem value="sports">Sports & Outdoors</SelectItem>
-                        <SelectItem value="books">Books</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="brand">Brand</Label>
-                    <Input id="brand" placeholder="Product brand" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="vendor">Vendor</Label>
-                    <Input id="vendor" placeholder="Product vendor" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="product-type">Product Type</Label>
-                    <Input id="product-type" placeholder="e.g., T-shirt, Phone, Book" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Tags */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Tags</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex gap-2">
-                    <Input
-                      value={newTag}
-                      onChange={(e) => setNewTag(e.target.value)}
-                      placeholder="Add tag"
-                      onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-                    />
-                    <Button type="button" size="icon" onClick={addTag}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {tags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="cursor-pointer">
-                          {tag}
-                          <X className="h-3 w-3 ml-1" onClick={() => removeTag(tag)} />
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Shipping */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Shipping</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="shipping-class">Shipping Class</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select shipping class" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="standard">Standard</SelectItem>
-                        <SelectItem value="express">Express</SelectItem>
-                        <SelectItem value="overnight">Overnight</SelectItem>
-                        <SelectItem value="free">Free Shipping</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="length">Length (cm)</Label>
-                      <Input id="length" type="number" step="0.1" placeholder="0.0" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="width">Width (cm)</Label>
-                      <Input id="width" type="number" step="0.1" placeholder="0.0" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="height">Height (cm)</Label>
-                    <Input id="height" type="number" step="0.1" placeholder="0.0" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-4 pt-6 border-t">
-            <Button type="button" variant="outline">
-              Save as Draft
-            </Button>
-            <Button type="submit">Publish Product</Button>
-          </div>
-        </form>
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default ProductsTable;

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
   return (
     <html lang="en">
-      <body>
+      <body className='bg-orange-200'>
         <ConditionalLayout>
           {children}
         </ConditionalLayout>
