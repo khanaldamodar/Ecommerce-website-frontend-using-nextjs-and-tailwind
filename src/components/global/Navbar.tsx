@@ -1,9 +1,11 @@
 "use client";
+import { CircleUserRound, ShoppingCart } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const navItems = [
     { name: "Home", href: "/" },
@@ -29,7 +31,8 @@ const Navbar = () => {
         const cart = JSON.parse(decodeURIComponent(cartCookie));
         // Sum all quantities if structure is [{productId, quantity}, ...]
         const totalCount = cart.reduce(
-          (sum: number, item: { quantity: number }) => sum + (item.quantity || 1),
+          (sum: number, item: { quantity: number }) =>
+            sum + (item.quantity || 1),
           0
         );
         setCartCount(totalCount);
@@ -38,6 +41,15 @@ const Navbar = () => {
       }
     } else {
       setCartCount(0);
+    }
+  }, []);
+
+  useEffect(() => {
+    const userCookie = getCookie("role"); // Or use "token", based on your auth setup
+    if (userCookie === "customer") {
+      setIsLoggedIn(true);
+    } else {
+      setIsLoggedIn(false);
     }
   }, []);
 
@@ -64,31 +76,26 @@ const Navbar = () => {
               ))}
             </div>
           </div>
-          <div className=" relative md:block hidden">
-            <a
-              href="/cart"
-              className="text-white hover:bg-white hover:text-brand px-3 py-2 rounded-md text-medium font-medium transition-colors duration-200 inline-flex items-center"
-            >
-              <svg
-                className="h-6 w-6 inline-block"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          <div className="flex items-center gap-5">
+            <div className=" relative md:block hidden">
+              <a
+                href="/cart"
+                className="text-white hover:bg-white hover:text-brand px-3 py-2 rounded-md text-medium font-medium transition-colors duration-200 inline-flex items-center"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 3h2l.4 2M7 13h10l1.4-7H5.6L7 13zm-4 0a2 2 0 11-4 0 2 2 0 014 0zm16 0a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-              {/* Cart count badge */}
-              {cartCount > 0 && (
-                <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-600 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center font-bold">
-                  {cartCount}
-                </span>
-              )}
-            </a>
+                <ShoppingCart />
+                {/* Cart count badge */}
+                {cartCount > 0 && (
+                  <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-600 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center font-bold">
+                    {cartCount}
+                  </span>
+                )}
+              </a>
+            </div>
+            <div>
+              <a href={isLoggedIn ? "/myaccount" : "/login"}>
+                <CircleUserRound className="text-white" size={30} />
+              </a>
+            </div>
           </div>
 
           {/* Hamburger Menu Button */}
@@ -122,34 +129,20 @@ const Navbar = () => {
               </svg>
             </button>
             {/* Cart for the Mobile  */}
-             <div className=" relative md:hidden ">
-            <a
-              href="/cart"
-              className="text-white hover:bg-white hover:text-brand px-3 py-2 rounded-md text-medium font-medium transition-colors duration-200 inline-flex items-center"
-            >
-              <svg
-                className="h-6 w-6 inline-block"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            <div className=" relative md:hidden ">
+              <a
+                href="/cart"
+                className="text-white hover:bg-white hover:text-brand px-3 py-2 rounded-md text-medium font-medium transition-colors duration-200 inline-flex items-center"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 3h2l.4 2M7 13h10l1.4-7H5.6L7 13zm-4 0a2 2 0 11-4 0 2 2 0 014 0zm16 0a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-              {/* Cart count badge */}
-              {cartCount > 0 && (
-                <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-600 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center font-bold">
-                  {cartCount}
-                </span>
-              )}
-            </a>
-          </div>
-             
-
+                <ShoppingCart />
+                {/* Cart count badge */}
+                {cartCount > 0 && (
+                  <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-600 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center font-bold">
+                    {cartCount}
+                  </span>
+                )}
+              </a>
+            </div>
           </div>
         </div>
       </div>

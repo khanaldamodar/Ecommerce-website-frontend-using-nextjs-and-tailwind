@@ -1,5 +1,6 @@
 'use client'
 import React, { useEffect, useState } from 'react'
+import Cookies from 'js-cookie'
 
 interface Product {
   id: number
@@ -17,6 +18,8 @@ interface CartItem {
 const CheckoutPage: React.FC = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [total, setTotal] = useState<string>('0.00')
+  const cookiesCart = Cookies.get("cart");
+
 
   useEffect(() => {
     const cart = localStorage.getItem('checkout_cart')
@@ -30,6 +33,9 @@ const CheckoutPage: React.FC = () => {
     }
   }, [])
 
+ const handleOrder = ()=>{
+      Cookies.remove("cart");
+ }
   if (cartItems.length === 0)
     return <div className="p-8 text-center text-gray-500">No items to checkout.</div>
 
@@ -66,7 +72,7 @@ const CheckoutPage: React.FC = () => {
       <div className="text-right">
         <button
           className="bg-brand hover:bg-accent text-white px-6 py-3 rounded-lg font-medium transition duration-200"
-          onClick={() => alert('Order placed successfully!')}
+          onClick={() => handleOrder()}
         >
           Place Order
         </button>

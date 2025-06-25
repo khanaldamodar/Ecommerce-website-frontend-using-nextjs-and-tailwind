@@ -7,6 +7,7 @@ const Logout = () => {
   const handleLogout = () => {
     // Clear the authentication token from cookies
     Cookies.remove("auth_token");
+    Cookies.remove("role");
     // Optionally, redirect to the login page or home page
     window.location.href = "/login"; // Adjust the path as needed
   };

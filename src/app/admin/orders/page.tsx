@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import Cookies from "js-cookie"
 import {
   Search,
   Filter,
@@ -12,7 +13,6 @@ import {
   Package,
   Clock,
   CheckCircle2,
-  AlertCircle,
   Truck,
   XCircle,
 } from "lucide-react"
@@ -34,220 +34,115 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import axios, { Axios } from "axios"
 
-// Types
-type OrderStatus = "processing" | "shipped" | "delivered" | "cancelled" | "refunded" | "on-hold"
+// Types based on your API data
+type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded"
 
 interface OrderItem {
-  id: string
-  name: string
+  id: number
+  order_id: number
+  product_id: number
   quantity: number
-  price: number
-  total: number
+  price: string
+  created_at: string
+  updated_at: string
 }
 
 interface Order {
-  id: string
-  orderNumber: string
-  date: Date
-  customer: {
-    name: string
-    email: string
-  }
-  items: OrderItem[]
-  total: number
+  id: number
+  user_id: number
+  total_amount: string
   status: OrderStatus
-  paymentMethod: string
-  shippingAddress: {
-    street: string
-    city: string
-    state: string
-    zip: string
-    country: string
-  }
-  trackingNumber?: string
+  created_at: string
+  updated_at: string
+  items: OrderItem[]
 }
 
-// Sample data
-const orders: Order[] = [
-  {
-    id: "1",
-    orderNumber: "ORD-2023-1001",
-    date: new Date(2023, 5, 15),
-    customer: {
-      name: "John Doe",
-      email: "john.doe@example.com",
-    },
-    items: [
-      { id: "item1", name: "Wireless Headphones", quantity: 1, price: 89.99, total: 89.99 },
-      { id: "item2", name: "Phone Case", quantity: 2, price: 19.99, total: 39.98 },
-    ],
-    total: 129.97,
-    status: "delivered",
-    paymentMethod: "Credit Card",
-    shippingAddress: {
-      street: "123 Main St",
-      city: "Austin",
-      state: "TX",
-      zip: "78701",
-      country: "USA",
-    },
-    trackingNumber: "TRK928374651",
-  },
-  {
-    id: "2",
-    orderNumber: "ORD-2023-1002",
-    date: new Date(2023, 5, 18),
-    customer: {
-      name: "Jane Smith",
-      email: "jane.smith@example.com",
-    },
-    items: [{ id: "item3", name: "Smart Watch", quantity: 1, price: 199.99, total: 199.99 }],
-    total: 199.99,
-    status: "shipped",
-    paymentMethod: "PayPal",
-    shippingAddress: {
-      street: "456 Oak Ave",
-      city: "Seattle",
-      state: "WA",
-      zip: "98101",
-      country: "USA",
-    },
-    trackingNumber: "TRK837465192",
-  },
-  {
-    id: "3",
-    orderNumber: "ORD-2023-1003",
-    date: new Date(2023, 5, 20),
-    customer: {
-      name: "Robert Johnson",
-      email: "robert.j@example.com",
-    },
-    items: [
-      { id: "item4", name: "Laptop Stand", quantity: 1, price: 49.99, total: 49.99 },
-      { id: "item5", name: "Wireless Mouse", quantity: 1, price: 29.99, total: 29.99 },
-      { id: "item6", name: "USB-C Cable", quantity: 2, price: 12.99, total: 25.98 },
-    ],
-    total: 105.96,
-    status: "processing",
-    paymentMethod: "Credit Card",
-    shippingAddress: {
-      street: "789 Pine Blvd",
-      city: "Chicago",
-      state: "IL",
-      zip: "60601",
-      country: "USA",
-    },
-  },
-  {
-    id: "4",
-    orderNumber: "ORD-2023-1004",
-    date: new Date(2023, 5, 22),
-    customer: {
-      name: "Emily Davis",
-      email: "emily.d@example.com",
-    },
-    items: [{ id: "item7", name: "Bluetooth Speaker", quantity: 1, price: 79.99, total: 79.99 }],
-    total: 79.99,
-    status: "cancelled",
-    paymentMethod: "Credit Card",
-    shippingAddress: {
-      street: "101 Maple Dr",
-      city: "Boston",
-      state: "MA",
-      zip: "02108",
-      country: "USA",
-    },
-  },
-  {
-    id: "5",
-    orderNumber: "ORD-2023-1005",
-    date: new Date(2023, 5, 25),
-    customer: {
-      name: "Michael Wilson",
-      email: "michael.w@example.com",
-    },
-    items: [
-      { id: "item8", name: "External Hard Drive", quantity: 1, price: 129.99, total: 129.99 },
-      { id: "item9", name: "HDMI Cable", quantity: 1, price: 14.99, total: 14.99 },
-    ],
-    total: 144.98,
-    status: "on-hold",
-    paymentMethod: "Bank Transfer",
-    shippingAddress: {
-      street: "202 Cedar St",
-      city: "San Francisco",
-      state: "CA",
-      zip: "94107",
-      country: "USA",
-    },
-  },
-  {
-    id: "6",
-    orderNumber: "ORD-2023-1006",
-    date: new Date(2023, 5, 28),
-    customer: {
-      name: "Sarah Brown",
-      email: "sarah.b@example.com",
-    },
-    items: [
-      { id: "item10", name: "Wireless Keyboard", quantity: 1, price: 59.99, total: 59.99 },
-      { id: "item11", name: "Monitor Stand", quantity: 1, price: 39.99, total: 39.99 },
-    ],
-    total: 99.98,
-    status: "refunded",
-    paymentMethod: "Credit Card",
-    shippingAddress: {
-      street: "303 Birch Ave",
-      city: "Denver",
-      state: "CO",
-      zip: "80202",
-      country: "USA",
-    },
-  },
-]
+
+
+// Sample data using your API structure
+// const orders: Order[] = [
+//   {
+//     id: 25,
+//     user_id: 2,
+//     total_amount: "299.99",
+//     status: "pending",
+//     created_at: "2025-06-25T10:35:12.000000Z",
+//     updated_at: "2025-06-25T10:35:12.000000Z",
+//     items: [
+//       {
+//         id: 3,
+//         order_id: 25,
+//         product_id: 1,
+//         quantity: 2,
+//         price: "99.99",
+//         created_at: "2025-06-25T10:35:12.000000Z",
+//         updated_at: "2025-06-25T10:35:12.000000Z",
+//       },
+//       {
+//         id: 4,
+//         order_id: 25,
+//         product_id: 5,
+//         quantity: 1,
+//         price: "99.99",
+//         created_at: "2025-06-25T10:35:12.000000Z",
+//         updated_at: "2025-06-25T10:35:12.000000Z",
+//       },
+//     ],
+//   },
+// ]
 
 // Helper function to get status badge variant
 const getStatusBadge = (status: OrderStatus) => {
   switch (status) {
+    case "pending":
+      return { variant: "outline", icon: <Clock className="h-3 w-3 mr-1" />, label: "Pending" }
     case "processing":
-      return { variant: "outline", icon: <Clock className="h-3 w-3 mr-1" />, label: "Processing" }
+      return { variant: "secondary", icon: <Clock className="h-3 w-3 mr-1" />, label: "Processing" }
     case "shipped":
-      return { variant: "secondary", icon: <Truck className="h-3 w-3 mr-1" />, label: "Shipped" }
+      return { variant: "default", icon: <Truck className="h-3 w-3 mr-1" />, label: "Shipped" }
     case "delivered":
       return { variant: "default", icon: <CheckCircle2 className="h-3 w-3 mr-1" />, label: "Delivered" }
     case "cancelled":
       return { variant: "destructive", icon: <XCircle className="h-3 w-3 mr-1" />, label: "Cancelled" }
     case "refunded":
       return { variant: "outline", icon: <ArrowUpDown className="h-3 w-3 mr-1" />, label: "Refunded" }
-    case "on-hold":
-      return { variant: "warning", icon: <AlertCircle className="h-3 w-3 mr-1" />, label: "On Hold" }
     default:
       return { variant: "outline", icon: null, label: status }
   }
 }
 
 // Format currency
-const formatCurrency = (amount: number) => {
+const formatCurrency = (amount: string | number) => {
+  const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-  }).format(amount)
+  }).format(numAmount)
 }
 
+// Format date from ISO string
+const formatDate = (dateString: string) => {
+  return format(new Date(dateString), "MMM d, yyyy")
+}
+
+
 export default function OrdersPage() {
+
+
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const [orders , setOrders] = useState<Order[]>([])
 
   // Filter orders based on search query and status
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
-      order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer.email.toLowerCase().includes(searchQuery.toLowerCase())
+      order.id.toString().includes(searchQuery.toLowerCase()) ||
+      order.user_id.toString().includes(searchQuery.toLowerCase())
 
     const matchesStatus = statusFilter === "all" || order.status === statusFilter
 
@@ -256,10 +151,13 @@ export default function OrdersPage() {
 
   // Sort orders by date
   const sortedOrders = [...filteredOrders].sort((a, b) => {
+    const dateA = new Date(a.created_at).getTime()
+    const dateB = new Date(b.created_at).getTime()
+
     if (sortOrder === "asc") {
-      return a.date.getTime() - b.date.getTime()
+      return dateA - dateB
     } else {
-      return b.date.getTime() - a.date.getTime()
+      return dateB - dateA
     }
   })
 
@@ -267,6 +165,27 @@ export default function OrdersPage() {
     setSelectedOrder(order)
     setIsDetailsOpen(true)
   }
+
+  useEffect(()=>{
+
+    const fetchOrders = async ()=>{
+      const token = Cookies.get("auth_token")
+      const response = await axios.get("http://localhost:8000/api/orders",{
+        headers:{
+          Authorization: `Bearer ${token}`
+        }
+      })
+      console.log(response)
+      if(response.data){
+        setOrders(response.data)
+      }
+
+    }
+
+    fetchOrders()
+    
+
+  },[])
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
@@ -288,7 +207,7 @@ export default function OrdersPage() {
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search orders..."
+            placeholder="Search by order ID or user ID..."
             className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -304,12 +223,12 @@ export default function OrdersPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="processing">Processing</SelectItem>
               <SelectItem value="shipped">Shipped</SelectItem>
               <SelectItem value="delivered">Delivered</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
               <SelectItem value="refunded">Refunded</SelectItem>
-              <SelectItem value="on-hold">On Hold</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -344,7 +263,7 @@ export default function OrdersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Order</TableHead>
+                  <TableHead>Order ID</TableHead>
                   <TableHead>
                     <Button
                       variant="ghost"
@@ -355,7 +274,8 @@ export default function OrdersPage() {
                       <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                   </TableHead>
-                  <TableHead>Customer</TableHead>
+                  <TableHead>User ID</TableHead>
+                  <TableHead>Items</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Total</TableHead>
                   <TableHead></TableHead>
@@ -364,7 +284,7 @@ export default function OrdersPage() {
               <TableBody>
                 {sortedOrders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       No orders found.
                     </TableCell>
                   </TableRow>
@@ -373,21 +293,17 @@ export default function OrdersPage() {
                     const statusBadge = getStatusBadge(order.status)
                     return (
                       <TableRow key={order.id}>
-                        <TableCell className="font-medium">{order.orderNumber}</TableCell>
-                        <TableCell>{format(order.date, "MMM d, yyyy")}</TableCell>
-                        <TableCell>
-                          <div>
-                            <div>{order.customer.name}</div>
-                            <div className="text-sm text-muted-foreground">{order.customer.email}</div>
-                          </div>
-                        </TableCell>
+                        <TableCell className="font-medium">#{order.id}</TableCell>
+                        <TableCell>{formatDate(order.created_at)}</TableCell>
+                        <TableCell>User #{order.user_id}</TableCell>
+                        <TableCell>{order.items.length} items</TableCell>
                         <TableCell>
                           <Badge variant={statusBadge.variant as any} className="flex items-center w-fit">
                             {statusBadge.icon}
                             {statusBadge.label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">{formatCurrency(order.total)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(order.total_amount)}</TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" onClick={() => viewOrderDetails(order)}>
                             <Eye className="h-4 w-4" />
@@ -437,7 +353,7 @@ export default function OrdersPage() {
           <DialogHeader>
             <DialogTitle>Order Details</DialogTitle>
             <DialogDescription>
-              {selectedOrder?.orderNumber} - {selectedOrder && format(selectedOrder.date, "MMMM d, yyyy")}
+              Order #{selectedOrder?.id} - {selectedOrder && formatDate(selectedOrder.created_at)}
             </DialogDescription>
           </DialogHeader>
 
@@ -446,12 +362,12 @@ export default function OrdersPage() {
               {/* Order Summary */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Order Number</h4>
-                  <p className="text-sm font-medium">{selectedOrder.orderNumber}</p>
+                  <h4 className="text-sm font-medium text-muted-foreground">Order ID</h4>
+                  <p className="text-sm font-medium">#{selectedOrder.id}</p>
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Date</h4>
-                  <p className="text-sm font-medium">{format(selectedOrder.date, "MMM d, yyyy")}</p>
+                  <p className="text-sm font-medium">{formatDate(selectedOrder.created_at)}</p>
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
@@ -464,43 +380,10 @@ export default function OrdersPage() {
                   </Badge>
                 </div>
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Payment Method</h4>
-                  <p className="text-sm font-medium">{selectedOrder.paymentMethod}</p>
+                  <h4 className="text-sm font-medium text-muted-foreground">User ID</h4>
+                  <p className="text-sm font-medium">#{selectedOrder.user_id}</p>
                 </div>
               </div>
-
-              {/* Customer Info */}
-              <div>
-                <h3 className="text-lg font-medium mb-2">Customer Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Customer</h4>
-                    <p className="text-sm font-medium">{selectedOrder.customer.name}</p>
-                    <p className="text-sm">{selectedOrder.customer.email}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Shipping Address</h4>
-                    <p className="text-sm">{selectedOrder.shippingAddress.street}</p>
-                    <p className="text-sm">
-                      {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state}{" "}
-                      {selectedOrder.shippingAddress.zip}
-                    </p>
-                    <p className="text-sm">{selectedOrder.shippingAddress.country}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tracking Info */}
-              {selectedOrder.trackingNumber && (
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Tracking Information</h3>
-                  <div className="flex items-center gap-2">
-                    <Package className="h-4 w-4" />
-                    <span className="text-sm">Tracking Number: </span>
-                    <span className="text-sm font-medium">{selectedOrder.trackingNumber}</span>
-                  </div>
-                </div>
-              )}
 
               {/* Order Items */}
               <div>
@@ -509,7 +392,7 @@ export default function OrdersPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Product</TableHead>
+                        <TableHead>Product ID</TableHead>
                         <TableHead>Quantity</TableHead>
                         <TableHead>Price</TableHead>
                         <TableHead className="text-right">Total</TableHead>
@@ -518,34 +401,41 @@ export default function OrdersPage() {
                     <TableBody>
                       {selectedOrder.items.map((item) => (
                         <TableRow key={item.id}>
-                          <TableCell>{item.name}</TableCell>
+                          <TableCell>Product #{item.product_id}</TableCell>
                           <TableCell>{item.quantity}</TableCell>
                           <TableCell>{formatCurrency(item.price)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(Number.parseFloat(item.price) * item.quantity)}
+                          </TableCell>
                         </TableRow>
                       ))}
                       <TableRow>
                         <TableCell colSpan={3} className="text-right font-medium">
-                          Subtotal
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(selectedOrder.items.reduce((sum, item) => sum + item.total, 0))}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-right font-medium">
-                          Shipping
-                        </TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(0)}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-right font-medium">
                           Total
                         </TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(selectedOrder.total)}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(selectedOrder.total_amount)}
+                        </TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
+                </div>
+              </div>
+
+              {/* Order Timeline */}
+              <div>
+                <h3 className="text-lg font-medium mb-2">Order Timeline</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Package className="h-4 w-4" />
+                    <span>Order created: {formatDate(selectedOrder.created_at)}</span>
+                  </div>
+                  {selectedOrder.updated_at !== selectedOrder.created_at && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4" />
+                      <span>Last updated: {formatDate(selectedOrder.updated_at)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -554,6 +444,12 @@ export default function OrdersPage() {
                 <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
                   Close
                 </Button>
+                {selectedOrder.status === "pending" && (
+                  <Button>
+                    <Clock className="mr-2 h-4 w-4" />
+                    Mark as Processing
+                  </Button>
+                )}
                 {selectedOrder.status === "processing" && (
                   <Button>
                     <Truck className="mr-2 h-4 w-4" />

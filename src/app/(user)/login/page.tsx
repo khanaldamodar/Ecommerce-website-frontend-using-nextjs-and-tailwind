@@ -1,42 +1,50 @@
-"use client"
+"use client";
 import React from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 const Page = () => {
- const handleForm = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  const formData = new FormData(e.currentTarget);
-  const email = String(formData.get("email") || "").trim();
-  const password = String(formData.get("password") || "").trim();
+  const handleForm = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const email = String(formData.get("email") || "").trim();
+    const password = String(formData.get("password") || "").trim();
 
-  if (!email || !password) {
-    alert("Email and password are required");
-    return;
-  }
-  try {
-    const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_URL}login`,
-      { email, password },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    console.log("Response:", response.data);
-    // Assuming the response contains a token
-    if (response.data.access_token) {
-      Cookies.set("auth_token", response.data.access_token, { expires: 7 }); // Store token for 7 days
-      console.log("Login successful, token stored in cookies");
-      // Redirect or perform any other action after successful login
-      window.location.href = "/admin/dashboard"; // Example redirect
+    if (!email || !password) {
+      alert("Email and password are required");
+      return;
     }
-  } catch (err: any) {
-    console.error("Login error:", err.response?.data || err.message);
-  }
-};
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_URL}login`,
+        { email, password },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("Response:", response.data);
+      // Assuming the response contains a token
+      if (response.data.access_token && response.data.user.role) {
+        Cookies.set("auth_token", response.data.access_token, { expires: 7 });
+        Cookies.set("role", response.data.user.role, { expires: 7 });
+
+        const role = response.data.user.role.toLowerCase();
+        if (role === "admin") {
+          window.location.href = "/admin/dashboard";
+        } else if (role === "customer") {
+          window.location.href = "/myaccount";
+        } else if(!role) {
+          window.location.href = "/login";
+          
+        }
+      }
+    } catch (err: any) {
+      console.error("Login error:", err.response?.data || err.message);
+    }
+  };
   return (
-    <section className="bg-gray-50 dark:bg-gray-900">
+    <section className=" dark:bg-gray-900">
       <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
         <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
           <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
